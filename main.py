@@ -1,7 +1,10 @@
 import os
 import telebot
+from flask import Flask, request
 
 import google.generativeai as genai
+
+app = Flask(__name__)
 
 genai.configure(api_key = os.environ['LLM_API'])
 bot = telebot.TeleBot(os.environ['BOT'])
@@ -524,5 +527,12 @@ The reason why Brock temporarily left Ash and Misty (probably during the Orange 
   response_message = chats.text
   bot.send_message(user_id, response_message)
 
-
-bot.infinity_polling()
+  @app.route(f'/{os.environ["BOT"]}', methods=['POST'])
+  def webhook():
+      update = telebot.types.Update.de_json(request.stream.read().decode('utf-8'))
+      bot.process_new_updates([update])
+      return '', 200
+  
+  # Run Flask app
+  if __name__ == '__main__':
+      app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
